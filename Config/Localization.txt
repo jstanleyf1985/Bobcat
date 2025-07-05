@@ -1,0 +1,10 @@
+Key,Source,Context,Changes,English,French,German,Klingon,Spanish,Polish
+
+<!-- ###### VEHICLE NEW ###### -->
+vehicleNewBobcat,vehicles,vehicle,new, New Bobcat,,,,,
+vehicleNewBobcatPlaceable,vehicles,item,EnChanged, Bobcat,,,,,
+vehicleNewBobcatPlaceableDesc,vehicles,item,EnChanged,Bobcat.,,,,,
+
+vehicleWrangler,vehicles,vehicle,new, Wrangler,,,,,
+vehicleWranglerPlaceable,vehicles,item,EnChanged, Wrangler,,,,,
+vehicleWranglerPlaceableDesc,vehicles,item,EnChanged,Wrangler,,,,,

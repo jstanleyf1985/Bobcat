@@ -1,0 +1,12 @@
+<configs>
+<append xpath="/recipes"> <!-- Standard based on a 4x4 Vehicle -->
+
+<recipe name="vehicleBobcatPlaceable" count="1" craft_time="210" craft_area="workbench" tags="workbenchCrafting">
+		<ingredient name="vehicleWheels" count="4"/>
+		<ingredient name="vehicleTruck4x4Chassis" count="1"/>
+		<ingredient name="vehicleTruck4x4Accessories" count="1"/>
+		<ingredient name="smallEngine" count="1"/>
+		<ingredient name="carBattery" count="1"/>
+	</recipe>
+</append>
+</configs>

@@ -1,0 +1,39 @@
+<configs>
+  <append xpath="/item_modifiers">
+    <item_modifier name="modVehicleBucket3" installable_tags="vplow" modifier_tags="plow" blocked_tags="noMods,plow" type="attachment">
+      <property name="Extends" value="modGeneralMaster"/>
+      <property name="UnlockedBy" value="modVehicleBucket3Schematic"/>
+      <property name="TraderStageTemplate" value="modsTier3"/>
+      <property name="CustomIcon" value="bucket3"/>
+      <effect_group tiered="false">
+        <passive_effect name="VehicleEntityDamage" operation="perc_add" value=".6"/>
+        <passive_effect name="VehicleBlockDamage" operation="perc_add" value=".56"/>
+        <passive_effect name="VehicleStrongSelfDamage" operation="perc_set" value=".25"/>
+      </effect_group>
+    </item_modifier>
+
+    <item_modifier name="modVehicleBucket5" installable_tags="vplow" modifier_tags="plow" blocked_tags="noMods,plow" type="attachment">
+      <property name="Extends" value="modGeneralMaster"/>
+      <property name="UnlockedBy" value="modVehicleBucket5Schematic"/>
+      <property name="TraderStageTemplate" value="modsTier3"/>
+      <property name="CustomIcon" value="bucket5"/>
+      <effect_group tiered="false">
+        <passive_effect name="VehicleEntityDamage" operation="perc_add" value=".6"/>
+        <passive_effect name="VehicleBlockDamage" operation="perc_add" value=".56"/>
+        <passive_effect name="VehicleStrongSelfDamage" operation="perc_set" value=".25"/>
+      </effect_group>
+    </item_modifier>
+
+    <item_modifier name="modVehicleDrill" installable_tags="vplow" modifier_tags="plow" blocked_tags="noMods,plow" type="attachment">
+      <property name="Extends" value="modGeneralMaster"/>
+      <property name="UnlockedBy" value="modVehicleBucket2Schematic"/>
+      <property name="TraderStageTemplate" value="modsTier3"/>
+      <property name="CustomIcon" value="drill"/>
+      <effect_group tiered="false">
+        <passive_effect name="VehicleEntityDamage" operation="perc_add" value=".6"/>
+        <passive_effect name="VehicleBlockDamage" operation="perc_add" value=".56"/>
+        <passive_effect name="VehicleStrongSelfDamage" operation="perc_set" value=".25"/>
+      </effect_group>
+    </item_modifier>
+  </append>
+</configs>
