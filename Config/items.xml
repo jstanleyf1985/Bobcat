@@ -3,7 +3,7 @@
 	  <item name="vehicleBobcatPlaceable">
 			<property name="CustomIcon" value="Bobcat"/>
 			<property name="Extends" value="vehicleMinibikePlaceable"/>
-			<property name="Tags" value="bobcat,vehicle,varmor,vengine,vfuel,vlight,vplow,vBucket3,vBucket5,vDrill,canHaveCosmetic"/> <!-- Choose available mod types -->
+			<property name="Tags" value="bobcat,vehicle,varmor,vengine,vfuel,vlight,vplow,vBucket3,vBucket5,vDrill,vTractionControl,canHaveCosmetic"/> <!-- Choose available mod types -->
 			<property name="DescriptionKey" value="vehicleBobcatPlaceableDesc"/>
 			<property name="Meshfile" value="#@modfolder:Resources/BobcatPrefab.unity3d?BobcatModel"/>
 			<property name="DropMeshfile" value="Items/Misc/sack_droppedPrefab"/>
@@ -20,13 +20,13 @@
 			</effect_group>
 		</item>
 
-    <item name="modVehicleBucket2Schematic">
+    <item name="vehicleBobcatPlaceableSchematic">
       <property name="Extends" value="schematicNoQualityMaster"/>
       <property name="CreativeMode" value="Player"/>
-      <property name="CustomIcon" value="Bucket2"/>
-      <property name="Unlocks" value="modVehicleBucket2"/>
+      <property name="CustomIcon" value="Bobcat"/>
+      <property name="Unlocks" value="vehicleBobcatPlaceable"/>
       <effect_group tiered="false">
-        <triggered_effect trigger="onSelfPrimaryActionEnd" action="ModifyCVar" cvar="modVehicleBucket2" operation="set" value="1"/>
+        <triggered_effect trigger="onSelfPrimaryActionEnd" action="ModifyCVar" cvar="vehicleBobcatPlaceable" operation="set" value="1"/>
         <triggered_effect trigger="onSelfPrimaryActionEnd" action="GiveExp" exp="50"/>
       </effect_group>
     </item>
@@ -38,17 +38,6 @@
       <property name="Unlocks" value="modVehicleBucket3"/>
       <effect_group tiered="false">
         <triggered_effect trigger="onSelfPrimaryActionEnd" action="ModifyCVar" cvar="modVehicleBucket3" operation="set" value="1"/>
-        <triggered_effect trigger="onSelfPrimaryActionEnd" action="GiveExp" exp="50"/>
-      </effect_group>
-    </item>
-
-    <item name="modVehicleBucket4Schematic">
-      <property name="Extends" value="schematicNoQualityMaster"/>
-      <property name="CreativeMode" value="Player"/>
-      <property name="CustomIcon" value="Bucket4"/>
-      <property name="Unlocks" value="modVehicleBucket4"/>
-      <effect_group tiered="false">
-        <triggered_effect trigger="onSelfPrimaryActionEnd" action="ModifyCVar" cvar="modVehicleBucket4" operation="set" value="1"/>
         <triggered_effect trigger="onSelfPrimaryActionEnd" action="GiveExp" exp="50"/>
       </effect_group>
     </item>
@@ -71,6 +60,17 @@
       <property name="Unlocks" value="modVehicleDrill"/>
       <effect_group tiered="false">
         <triggered_effect trigger="onSelfPrimaryActionEnd" action="ModifyCVar" cvar="modVehicleDrill" operation="set" value="1"/>
+        <triggered_effect trigger="onSelfPrimaryActionEnd" action="GiveExp" exp="50"/>
+      </effect_group>
+    </item>
+
+    <item name="modTractionControlSchematic">
+      <property name="Extends" value="schematicNoQualityMaster"/>
+      <property name="CreativeMode" value="Player"/>
+      <property name="CustomIcon" value="TractionControl"/>
+      <property name="Unlocks" value="modmodTractionControl"/>
+      <effect_group tiered="false">
+        <triggered_effect trigger="onSelfPrimaryActionEnd" action="ModifyCVar" cvar="modTractionControl" operation="set" value="1"/>
         <triggered_effect trigger="onSelfPrimaryActionEnd" action="GiveExp" exp="50"/>
       </effect_group>
     </item>

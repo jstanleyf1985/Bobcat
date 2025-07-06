@@ -30,9 +30,9 @@
 	<setting key="LevelingModeAudioVolume">1.0</setting> <!-- Volume level of leveling mode ground rumble -->
 	
 	<!-- Feature Values -->
-	<setting key="TerrainDamage">20</setting>
-	<setting key="EntityDamage">20</setting> <!-- Base damage for zombies and animals -->
-	<setting key="LevelingModeFillHeight">-50</setting> <!-- -127 to 127, negative is high / positive is low  -->
+	<setting key="TerrainDamage">40</setting>
+	<setting key="EntityDamage">40</setting> <!-- Base damage for zombies and animals -->
+	<setting key="LevelingModeFillHeight">-50</setting> <!-- -127 to 1, negative is high / positive is low  -->
 	<setting key="TerrainBlocksToSmooth">3</setting> <!-- How many blocks ahead to apply terrain smoothing in smoothing mode -->
 	<setting key="TimeToWait">1</setting> <!-- Amount of time in seconds when changing modes before the mode begins action after you stop -->
 

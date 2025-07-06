@@ -3,13 +3,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Windows.Forms;
 using System.Xml.Linq;
-using UAI;
 using UnityEngine;
-using UnityEngine.SearchService;
-using static LightingAround;
+using System.Reflection;
+using System.Reflection.Emit;
+using RaycastPathing;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Tab;
 
 namespace Bobcat
 {
@@ -28,11 +27,6 @@ namespace Bobcat
     [HarmonyPatch(typeof(GameManager), "Update")]
     public static class Patch_VehicleIntercept
     {
-      public static bool wasHopPressedLastFrame = false;
-      public static bool lightWasOnLastFrame = false;
-      public static EntityVehicle lastAttachedVehicle = null;
-      public static Coroutine turboCoroutine = null;
-      public static Coroutine lightCoroutine = null;
 
       public static void Postfix()
       {
@@ -42,25 +36,27 @@ namespace Bobcat
         if (player.AttachedToEntity is EntityVehicle currentVehicle)
         {
           // Only run this once when entering a new vehicle
-          if (lastAttachedVehicle != currentVehicle)
+          if (VehicleStatic.lastAttachedVehicle != currentVehicle)
           {
-            lastAttachedVehicle = currentVehicle;
+            VehicleStatic.lastAttachedVehicle = currentVehicle;
 
             HandleEnterVehicle(currentVehicle);
           }
 
 
           HandleModeChange(currentVehicle, VehicleStatic.actions);
+          HandleHornToggle(currentVehicle, VehicleStatic.actions);
           HandleLightChange(currentVehicle);
           HandleTurbo(currentVehicle, VehicleStatic.actions);
         }
         else
         {
           // Player is not attached to a vehicle anymore
-          if (lastAttachedVehicle != null) HandleExitVehicle(lastAttachedVehicle);
+          if (VehicleStatic.lastAttachedVehicle != null) HandleExitVehicle(VehicleStatic.lastAttachedVehicle);
 
-          lastAttachedVehicle = null;
-          wasHopPressedLastFrame = false;
+          VehicleStatic.lastAttachedVehicle = null;
+          VehicleStatic.wasHopPressedLastFrame = false;
+          VehicleStatic.wasHornPressedLastFrame = false;
 
           VehicleStatic.CurrentMode = VehicleStatic.BobcatMode.None;
         }
@@ -166,20 +162,6 @@ namespace Bobcat
     }
 
     // Modes
-    public static void RunLandscapingLowMode(EntityVehicle vehicle)
-    {
-      // Flatten forward and right vectors to remove pitch/roll effect
-      Vector3 forward = Vector3.ProjectOnPlane(vehicle.transform.forward, Vector3.up).normalized;
-      Vector3 right = Vector3.ProjectOnPlane(vehicle.transform.right, Vector3.up).normalized;
-
-      // Center point 1 blocks in front of vehicle
-      Vector3 targetCenter = vehicle.position + forward;
-
-      VehicleStatic.bucketModeLow = true; // Set high or low bucket height
-
-      ScanResults targets = GetTargets(targetCenter, right, forward, vehicle);
-      DamageTargets(targets, vehicle);
-    }
     public static void RunLandscapingHighMode(EntityVehicle vehicle)
     {
       // Flatten forward and right vectors to remove pitch/roll effect
@@ -187,9 +169,7 @@ namespace Bobcat
       Vector3 right = Vector3.ProjectOnPlane(vehicle.transform.right, Vector3.up).normalized;
 
       // Center point 1 blocks in front of vehicle
-      Vector3 targetCenter = vehicle.position + forward;
-
-      VehicleStatic.bucketModeLow = false; // Set high or low bucket height
+      Vector3 targetCenter = vehicle.position + forward + Vector3.down * 0.5f;
 
       ScanResults targets = GetTargets(targetCenter, right, forward, vehicle);
       DamageTargets(targets, vehicle);
@@ -254,7 +234,8 @@ namespace Bobcat
 
 
         // Raycast downward to find first solid block
-        Vector3i targetPos = RaycastToGround(basePos, 256);
+        Vector3i raycastStart = new Vector3i(basePos.x, basePos.y + 5, basePos.z);
+        Vector3i targetPos = RaycastToGround(raycastStart, 256);
         if (targetPos == Vector3i.zero) continue; // Ground not found
 
         Vector3i densityPos = new Vector3i(targetPos.x, targetPos.y - 0.5f, targetPos.z);
@@ -335,7 +316,7 @@ namespace Bobcat
 
       return offsets;
     }
-    public static void FillTerrain(EntityVehicle vehicle, Vector3i centerPos, int radius, sbyte density, int clrIdx)
+    public static void FillTerrain_Old(EntityVehicle vehicle, Vector3i centerPos, int radius, sbyte density, int clrIdx)
     {
       World world = GameManager.Instance.World;
       bool inventoryEmpty = true;
@@ -351,7 +332,6 @@ namespace Bobcat
       List<string> mods = GetModifierNames(vehicle);
       if (mods.Count == 0) return;
       if (mods.Contains("modVehicleBucket5")) radius = 2;
-
       for (int dx = -radius; dx <= radius; dx++)
       {
         for (int dy = -radius; dy <= radius; dy++)
@@ -361,7 +341,7 @@ namespace Bobcat
             Vector3i pos = centerPos + new Vector3i(dx, dy, dz);
             BlockValue current = world.GetBlock(pos);
 
-            if ((current.isair || current.isWater) && lowTilt)
+            if ((current.isair || current.isWater))
             {
               ItemStack[] vehicleInventory = vehicle?.bag?.items;
               if (vehicleInventory == null || vehicleInventory.Length == 0) continue;
@@ -389,6 +369,82 @@ namespace Bobcat
               }
             }
           }
+        }
+      }
+    }
+    public static void FillTerrain(EntityVehicle vehicle, Vector3i centerPos, int radius, sbyte density, int clrIdx)
+    {
+      World world = GameManager.Instance.World;
+      bool inventoryEmpty = true;
+
+      Vector3 fwd = vehicle.transform.forward;
+      float pitch = Vector3.Angle(Vector3.ProjectOnPlane(fwd, Vector3.up), fwd);
+
+      Vector3 right = vehicle.transform.right;
+      float roll = Vector3.Angle(Vector3.ProjectOnPlane(right, Vector3.up), right);
+
+      bool lowTilt = pitch < 3f && roll < 3f;
+
+      List<string> mods = GetModifierNames(vehicle);
+      if (mods.Count == 0) return;
+      if (mods.Contains("modVehicleBucket5")) radius = 2;
+
+      // Collect candidate positions
+      List<Vector3i> positionsToFill = new List<Vector3i>();
+
+      for (int dx = -radius; dx <= radius; dx++)
+      {
+        for (int dy = -radius; dy <= radius; dy++)
+        {
+          for (int dz = -radius; dz <= radius; dz++)
+          {
+            Vector3i pos = centerPos + new Vector3i(dx, dy, dz);
+            BlockValue current = world.GetBlock(pos);
+
+            if (current.isair || current.isWater)
+            {
+              positionsToFill.Add(pos);
+            }
+          }
+        }
+      }
+
+      // Sort lowest to highest Y
+      positionsToFill.Sort((a, b) => a.y.CompareTo(b.y));
+
+      foreach (var pos in positionsToFill)
+      {
+        Vector3i below = new Vector3i(pos.x, pos.y - 1, pos.z);
+        BlockValue belowBlock = world.GetBlock(below);
+
+        // Only place block if there is support underneath
+        if (belowBlock.isair || belowBlock.isWater) continue;
+
+        ItemStack[] vehicleInventory = vehicle?.bag?.items;
+        if (vehicleInventory == null || vehicleInventory.Length == 0) continue;
+
+        Dictionary<int, ItemStack> fillBlockStack = GetNextTerrainResource(vehicle, vehicleInventory);
+        if (fillBlockStack == null || fillBlockStack.Count == 0) continue;
+
+        KeyValuePair<int, ItemStack> itemStack = fillBlockStack.First();
+        BlockValue blockToPlace = itemStack.Value.itemValue.ToBlockValue();
+        world.SetBlockRPC(clrIdx, pos, blockToPlace);
+
+        int newCount = itemStack.Value.count - 1;
+        if (newCount <= 0)
+          vehicleInventory[itemStack.Key] = ItemStack.Empty.Clone();
+        else
+          vehicleInventory[itemStack.Key] = new ItemStack(itemStack.Value.itemValue.Clone(), newCount);
+
+        vehicle.bag.SetSlot(itemStack.Key, vehicleInventory[itemStack.Key]);
+
+        // Play particles
+        if (BobcatConfig.EnableDustParticles)
+        {
+          Vector3 worldParticlePos = pos.ToVector3() + Vector3.up * 0.25f;
+          string nextName = BobcatParticleManager.GetNextDust();
+          ParticleEffect pe = new ParticleEffect(nextName, worldParticlePos, Quaternion.identity, 1f, Color.white);
+          GameManager.Instance.SpawnParticleEffectServer(pe, GameManager.Instance.myEntityPlayerLocal.entityId, true, true);
         }
       }
     }
@@ -531,7 +587,8 @@ namespace Bobcat
         if (entityAlive == null) continue;
 
         int entityDamageToApply = GetEntityDamageByConfig(entityAlive);
-        entity.DamageEntity(DamageSource.fallingBlock, entityDamageToApply, false, 1);
+        DamageSource dmgSource = new DamageSource(EnumDamageSource.External, EnumDamageTypes.Slashing);
+        entity.DamageEntity(dmgSource, entityDamageToApply, true, 1);
 
         if (BobcatConfig.EnableBloodParticles)
         {
@@ -556,9 +613,9 @@ namespace Bobcat
       {
         Vector3 forceDir = alive.position - vehicle.position;
         forceDir.Normalize();
-        forceDir += Vector3.up * 1f; // Add vertical lift
+        forceDir += Vector3.up * 1.25f; // Add vertical lift
 
-        float forceMagnitude = 60f;
+        float forceMagnitude = 80f;
         Vector3 force = forceDir * forceMagnitude;
 
         alive.emodel.DoRagdoll(1.5f,EnumBodyPartHit.Torso,force,alive.position,false);
@@ -586,9 +643,11 @@ namespace Bobcat
       VehicleStatic.transformLookup = VehicleStatic.transformLookup = vehicle.gameObject.GetComponentsInChildren<Transform>(true).GroupBy(t => t.name).ToDictionary(g => g.Key, g => g.First());
 
       List<string> modsInstalled = GetModifierNames(vehicle);
+      List<string> cosModsInstalled = GetCosModifierNames(vehicle);
       bool pedalDown = (VehicleStatic.transformLookup.TryGetValue("PedalDown", out var pedalDownT));
       bool pedalDownSuperCharger1 = (VehicleStatic.transformLookup.TryGetValue("PedalDownSuperCharger1", out var pedalDownSuperCharger1T));
       bool pedalDownSuperCharger2 = (VehicleStatic.transformLookup.TryGetValue("PedalDownSuperCharger2", out var pedalDownSuperCharger2T));
+      Transform bobcatBodyT = vehicle.transform.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "BobcatBody");
       bool headLampsOn = (VehicleStatic.transformLookup.TryGetValue("HeadLampsOn", out var hlOnT));
       bool headLampsOff = (VehicleStatic.transformLookup.TryGetValue("HeadLampsOff", out var hlOffT));
       bool gasCans = (VehicleStatic.transformLookup.TryGetValue("GasCans", out var gasCansT));
@@ -601,6 +660,172 @@ namespace Bobcat
       bool drillOn = (VehicleStatic.transformLookup.TryGetValue("DrillOn", out var drillOnT));
       bool bucketInstalled = bucketNames.Any(mod => modsInstalled.Contains(mod));
       if (!bucketInstalled) DisableTransforms(bucketTs);
+
+      if (bobcatBodyT == null) return;
+
+      // Does not have a dye
+      if (cosModsInstalled.Count == 0)
+      {
+        SetDyeColor(vehicle, bobcatBodyT, "#FFFFFF");
+
+        ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+        newVehItemVal.CosmeticMods = new ItemValue[]
+        {
+                new ItemValue(ItemClass.GetItem("modDyeWhite").type, true)
+        };
+
+        vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+      }
+
+      // Has a dye
+      if (cosModsInstalled.Count > 0)
+      {
+        foreach (var mod in cosModsInstalled) Log.Warning(mod);
+        string cosmodInstalled = cosModsInstalled[0];
+
+        switch (cosmodInstalled)
+        {
+          case "modDyeOrange":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#FFA500");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeOrange").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyeBrown":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#964B00");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeBrown").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyeRed":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#FF0000");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeRed").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyeYellow":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#FFFF00");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeYellow").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyeGreen":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#008000");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeGreen").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyeBlue":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#0000FF");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeBlue").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyePurple":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#5D3FD3");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyePurple").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyeBlack":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#111111");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeBlack").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          case "modDyePink":
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#FFC0CB");
+
+              ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemVal.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyePink").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
+              break;
+            }
+
+          default:
+            {
+              SetDyeColor(vehicle, bobcatBodyT, "#FFFFFF");
+
+              ItemValue newVehItemValWhite = vehicle.GetVehicle().itemValue.Clone();
+              newVehItemValWhite.CosmeticMods = new ItemValue[]
+              {
+                new ItemValue(ItemClass.GetItem("modDyeWhite").type, true)
+              };
+
+              vehicle.GetVehicle().SetItemValueMods(newVehItemValWhite);
+              break;
+            }
+        }
+      }
 
       // Supercharger
       if (modsInstalled.Contains("modVehicleSuperCharger"))
@@ -648,12 +873,45 @@ namespace Bobcat
       if (!modsInstalled.Contains("modVehicleDrill")) DisableTransforms(new List<Transform> { drillOnT, drillOffT });
       if (!modsInstalled.Contains("modVehicleDrill")) DisableDrillAudio(vehicle);
     }
+
+    public static void SetDyeColor(EntityVehicle vehicle, Transform part, string hex)
+    {
+      Renderer renderer = part.GetComponent<Renderer>();
+      Material mat = renderer.material;
+      mat.color = HexToColor(hex);
+    }
+    public static Color HexToColor(string hex)
+    {
+      if (string.IsNullOrEmpty(hex))
+        return Color.white;
+
+      hex = hex.Replace("#", "");
+
+      if (hex.Length == 6) // RGB
+      {
+        byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+        return new Color32(r, g, b, 255);
+      }
+      else if (hex.Length == 8) // RGBA
+      {
+        byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+        byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+        byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+        byte a = byte.Parse(hex.Substring(6, 2), System.Globalization.NumberStyles.HexNumber);
+        return new Color32(r, g, b, a);
+      }
+
+      Debug.LogWarning("Invalid hex color format: " + hex);
+      return Color.white;
+    }
     public static int GetEntityDamageByConfig(EntityAlive entity)
     {
       string entityClassName = entity.EntityClass.entityClassName;
       ProgressionValue miner69erProgression = GameManager.Instance.myEntityPlayerLocal?.Progression?.GetProgressionValue("perkMiner69r");
       int perkDamageBonus = miner69erProgression != null ? miner69erProgression.Level : 1;
-      float[] progressionToMultiplier = new float[5] { 1.1f, 1.2f, 1.3f, 1.4f, 1.5f };
+      float[] progressionToMultiplier = new float[6] { 1.0f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f };
 
       int entityDamage = 0;
 
@@ -686,7 +944,7 @@ namespace Bobcat
       string blockMaterial = block.blockMaterial.id;
       ProgressionValue miner69erProgression = GameManager.Instance.myEntityPlayerLocal?.Progression?.GetProgressionValue("perkMiner69r");
       int perkDamageBonus = miner69erProgression != null ? miner69erProgression.Level : 1;
-      float[] progressionToMultiplier = new float[5] { 1.3f, 1.6f, 1.9f, 2.2f, 2.5f };
+      float[] progressionToMultiplier = new float[6] { 1.0f, 1.3f, 1.6f, 1.9f, 2.2f, 2.5f };
 
       if (string.IsNullOrEmpty(blockMaterial)) return BobcatConfig.TerrainDamage;
 
@@ -719,7 +977,7 @@ namespace Bobcat
       string blockMaterial = block.blockMaterial.id;
       ProgressionValue motherlodeProgression = GameManager.Instance.myEntityPlayerLocal?.Progression?.GetProgressionValue("perkMotherLode");
       int perkHarvestBonus = motherlodeProgression != null ? motherlodeProgression.Level : 1;
-      float[] progressionToMultiplier = new float[5] { 1.2f, 1.4f, 1.6f, 1.8f, 2.0f };
+      float[] progressionToMultiplier = new float[6] { 1.0f, 1.2f, 1.4f, 1.6f, 1.8f, 2.0f };
 
       if (string.IsNullOrEmpty(blockMaterial)) return baseAmount;
 
@@ -769,7 +1027,7 @@ namespace Bobcat
       bool audio = VehicleStatic.transformLookup.TryGetValue("Audio", out var audioT);
 
       // Only enable operating sounds and particles when in landscaping mode, else show inactive
-      if (VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.LandscapingLow || VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.LandscapingHigh)
+      if (VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.LandscapingHigh)
       {
         EnableDisableTransforms(new List<Transform> { drillOffT }, new List<Transform> { drillOnT });
         return;
@@ -864,12 +1122,30 @@ namespace Bobcat
       if (actions?.Hop == null) return;
 
       bool isHopPressed = actions.Hop.IsPressed;
-      if (isHopPressed && !Patch_VehicleIntercept.wasHopPressedLastFrame) GameManager.Instance.StartCoroutine(HandleModeChangeOnce(vehicle));
-      
-      Patch_VehicleIntercept.wasHopPressedLastFrame = isHopPressed;
+      if (isHopPressed && !VehicleStatic.wasHopPressedLastFrame) GameManager.Instance.StartCoroutine(HandleModeChangeOnce(vehicle));
+
+      VehicleStatic.wasHopPressedLastFrame = isHopPressed;
       
     }
-   
+    private static void HandleHornToggle(EntityVehicle vehicle, PlayerActionsVehicle actions)
+    {
+      if (actions?.HonkHorn == null) return;
+
+      bool hornPressed = actions.HonkHorn.IsPressed;
+
+      if (hornPressed && !VehicleStatic.wasHornPressedLastFrame)
+      {
+        // Toggle mode activation
+        if(VehicleStatic.CurrentMode != VehicleStatic.BobcatMode.None) VehicleStatic.isCurrentModeActive = !VehicleStatic.isCurrentModeActive;
+        if(VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.None) GameManager.Instance.PlaySoundAtPositionServer(vehicle.position, "Bobcat_horn", AudioRolloffMode.Linear, 20);
+        SetVehicleActivateWindow(true);
+
+        // Set leveling/filling reference height on activated
+        if (VehicleStatic.isCurrentModeActive) VehicleStatic.vehicleLevelingModeHeight = GetLevelingReferencePosition(vehicle).y;
+      }
+
+      VehicleStatic.wasHornPressedLastFrame = hornPressed;
+    }
     private static IEnumerator HandleModeChangeOnce(EntityVehicle vehicle)
     {
       string entityName = EntityClass.list[vehicle.entityClass].entityClassName;
@@ -878,10 +1154,6 @@ namespace Bobcat
         var modeValues = Enum.GetValues(typeof(VehicleStatic.BobcatMode)).Cast<VehicleStatic.BobcatMode>().ToList();
         int currentIndex = modeValues.IndexOf(VehicleStatic.CurrentMode);
         bool bobcatAudio = VehicleStatic.transformLookup.TryGetValue("Audio", out var bobcatAudioT);
-
-        // Handle wheel stiffness in operating modes
-        if (VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.None) SetTractionControl(vehicle);
-        else SetTractionControl(vehicle);
 
         AudioSource fillAudioComponent = bobcatAudioT.Find("RockLeveling").GetComponentInChildren<AudioSource>();
         AudioSource modeChangeAudioComponent = bobcatAudioT.Find("ModeChange").GetComponentInChildren<AudioSource>();
@@ -903,16 +1175,16 @@ namespace Bobcat
 
         SetVehicleModeSpeed(vehicle);
 
-        // Get leveling reference position
-        if(VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.Leveling) VehicleStatic.vehicleLevelingModeHeight = GetLevelingReferencePosition(vehicle).y;
-
         // Handle mode audio
         if (VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.Filling) GameManager.Instance.StartCoroutine(FadeInAudio(fillAudioComponent, 2, BobcatConfig.LevelingModeAudioVolume));
         else GameManager.Instance.StartCoroutine(FadeOutAudio(fillAudioComponent, 2, 1f));
 
         // UI
+        VehicleStatic.isCurrentModeActive = false;
         SetVehicleStatusWindow(true);
+        SetVehicleActivateWindow(true);
 
+        GameManager.Instance.StopCoroutine(RunVehicleMode(VehicleStatic.CurrentMode, vehicle));
         GameManager.Instance.StartCoroutine(RunVehicleMode(VehicleStatic.CurrentMode, vehicle));
         
       }
@@ -923,26 +1195,27 @@ namespace Bobcat
     {
       Transform physicsTransform = vehicle.PhysicsTransform;
       WheelCollider[] wheels = physicsTransform.GetComponentsInChildren<WheelCollider>();
-      bool useBase = BobcatConfig.EnableTractionControl;
+      bool hasTractionControl = GetModifierNames(vehicle).Contains("modTractionControl");
+      bool disableTractionControl = (!BobcatConfig.EnableTractionControl || !hasTractionControl);
 
       foreach (var wheel in wheels)
       {
-        wheel.mass = useBase? 40 : 1000;
+        wheel.mass = disableTractionControl ? 40 : 1000;
 
         WheelFrictionCurve forwardFriction = wheel.forwardFriction;
-        forwardFriction.stiffness = useBase ? 1.3f : 5f;
-        forwardFriction.extremumSlip = useBase ? 0.4f : 2f;
-        forwardFriction.extremumValue = useBase ? 1f : 2f;
-        forwardFriction.asymptoteSlip = useBase ? 0.8f : 2f;
-        forwardFriction.asymptoteValue = useBase ? 0.5f : 2f;
+        forwardFriction.stiffness = disableTractionControl ? 1.3f : 5f;
+        forwardFriction.extremumSlip = disableTractionControl ? 0.4f : 2f;
+        forwardFriction.extremumValue = disableTractionControl ? 1f : 2f;
+        forwardFriction.asymptoteSlip = disableTractionControl ? 0.8f : 2f;
+        forwardFriction.asymptoteValue = disableTractionControl ? 0.5f : 2f;
         wheel.forwardFriction = forwardFriction;
 
         WheelFrictionCurve sidewaysFriction = wheel.sidewaysFriction;
-        sidewaysFriction.stiffness = useBase ? 1.3f : 5f;
-        sidewaysFriction.extremumSlip = useBase ? 0.2f : 2f;
-        sidewaysFriction.extremumValue = useBase ? 2f : 2f;
-        sidewaysFriction.asymptoteSlip = useBase ? 0.75f : 2f;
-        sidewaysFriction.asymptoteValue = useBase ? 0.75f : 2f;
+        sidewaysFriction.stiffness = disableTractionControl ? 1.3f : 5f;
+        sidewaysFriction.extremumSlip = disableTractionControl ? 0.2f : 2f;
+        sidewaysFriction.extremumValue = disableTractionControl ? 2f : 2f;
+        sidewaysFriction.asymptoteSlip = disableTractionControl ? 0.75f : 2f;
+        sidewaysFriction.asymptoteValue = disableTractionControl ? 0.75f : 2f;
         wheel.sidewaysFriction = sidewaysFriction;
       }
     }
@@ -960,7 +1233,6 @@ namespace Bobcat
       {
         case VehicleStatic.BobcatMode.Tunneling:
           return hasDrill && BobcatConfig.EnableTunnelingMode;
-        case VehicleStatic.BobcatMode.LandscapingLow:
         case VehicleStatic.BobcatMode.LandscapingHigh:
         case VehicleStatic.BobcatMode.Leveling:
         case VehicleStatic.BobcatMode.Filling:
@@ -976,7 +1248,6 @@ namespace Bobcat
     {
       switch (mode)
       {
-        case VehicleStatic.BobcatMode.LandscapingLow: return BobcatConfig.EnableLandscapingLowMode;
         case VehicleStatic.BobcatMode.LandscapingHigh: return BobcatConfig.EnableLandscapingHighMode;
         case VehicleStatic.BobcatMode.Tunneling: return BobcatConfig.EnableTunnelingMode;
         case VehicleStatic.BobcatMode.Filling: return BobcatConfig.EnableFillMode;
@@ -993,15 +1264,20 @@ namespace Bobcat
 
       while (time < secondsToFade)
       {
+        if (audio == null) yield break;
+
         time += Time.deltaTime;
         float t = Mathf.Clamp01(time / secondsToFade);
         audio.volume = Mathf.Lerp(startVolume, 0f, t);
         yield return null;
       }
 
-      audio.volume = 0f;
-      audio.Stop();
-      VehicleStatic.vehicleModeAudioSources.Remove(audio);
+      if (audio != null)
+      {
+        audio.volume = 0f;
+        audio.Stop();
+      }
+      VehicleStatic.vehicleModeAudioSources?.Remove(audio);
     }
     private static IEnumerator FadeInAudio(AudioSource audio, float secondsToFade, float targetVolume)
     {
@@ -1029,23 +1305,23 @@ namespace Bobcat
       bool lightIsOn = vehicle.IsHeadlightOn;
 
       // Lights turned ON this frame
-      if (lightIsOn && !Patch_VehicleIntercept.lightWasOnLastFrame)
+      if (lightIsOn && !VehicleStatic.lightWasOnLastFrame)
       {
-        if (Patch_VehicleIntercept.lightCoroutine == null) Patch_VehicleIntercept.lightCoroutine = GameManager.Instance.StartCoroutine(HandleLightChangeOnce(vehicle));
+        if (VehicleStatic.lightCoroutine == null) VehicleStatic.lightCoroutine = GameManager.Instance.StartCoroutine(HandleLightChangeOnce(vehicle));
       }
 
       // Lights turned OFF this frame
-      else if (!lightIsOn && Patch_VehicleIntercept.lightWasOnLastFrame)
+      else if (!lightIsOn && VehicleStatic.lightWasOnLastFrame)
       {
-        if (Patch_VehicleIntercept.lightCoroutine != null)
+        if (VehicleStatic.lightCoroutine != null)
         {
-          GameManager.Instance.StopCoroutine(Patch_VehicleIntercept.lightCoroutine);
+          GameManager.Instance.StopCoroutine(VehicleStatic.lightCoroutine);
           DisableLightChangeEffect(vehicle);
-          Patch_VehicleIntercept.lightCoroutine = null;
+          VehicleStatic.lightCoroutine = null;
         }
       }
 
-      Patch_VehicleIntercept.lightWasOnLastFrame = lightIsOn;
+      VehicleStatic.lightWasOnLastFrame = lightIsOn;
     }
     private static IEnumerator HandleLightChangeOnce(EntityVehicle vehicle)
     {
@@ -1081,11 +1357,11 @@ namespace Bobcat
 
       bool isTurboHeld = actions.Turbo.IsPressed;
 
-      if (isTurboHeld && Patch_VehicleIntercept.turboCoroutine == null) Patch_VehicleIntercept.turboCoroutine = GameManager.Instance.StartCoroutine(HandleTurboWhileHeld(vehicle));
-      else if (!isTurboHeld && Patch_VehicleIntercept.turboCoroutine != null)
+      if (isTurboHeld && VehicleStatic.turboCoroutine == null) VehicleStatic.turboCoroutine = GameManager.Instance.StartCoroutine(HandleTurboWhileHeld(vehicle));
+      else if (!isTurboHeld && VehicleStatic.turboCoroutine != null)
       {
-        GameManager.Instance.StopCoroutine(Patch_VehicleIntercept.turboCoroutine);
-        Patch_VehicleIntercept.turboCoroutine = null;
+        GameManager.Instance.StopCoroutine(VehicleStatic.turboCoroutine);
+        VehicleStatic.turboCoroutine = null;
 
         ResetDrillAudioAnim(vehicle);
       }
@@ -1266,8 +1542,15 @@ namespace Bobcat
       if (modifierNames.Contains("modVehicleDrill") && vehicle.IsDriven()) ActivateDrillOn(vehicle);
       else ActivateDrillOff(vehicle);
 
+      // Set falling block damage to 0 if armor mod is installed
+      if (modifierNames.Contains("modVehicleArmor") && vehicle.IsDriven()) GameManager.Instance.myEntityPlayerLocal.Buffs.AddBuff("buffNoFallingBlockDamage");
+
+      // Traction control
+      SetTractionControl(vehicle);
+
       // UI
       SetVehicleStatusWindow(true);
+      SetVehicleActivateWindow(true);
     }
     private static void StartParticleIfAvailable(Transform transform)
     {
@@ -1283,26 +1566,23 @@ namespace Bobcat
       StopParticleIfAvailable("PedalDown");
       StopParticleIfAvailable("PedalDownSuperCharger1");
       StopParticleIfAvailable("PedalDownSuperCharger2");
+      List<string> modifierNames = GetModifierNames(vehicle);
+
+      // Set mode back to none
+      VehicleStatic.CurrentMode = VehicleStatic.BobcatMode.None;
 
       // Reset wheel stiffness when not in operating mode
       SetTractionControl(vehicle);
-
-      // CREATE AN INCLINE / DECLINE BUTTON FOR DIGGING DOWN / CREATING RAMPS UP
-      // MAKE SURE ICONS WORK
-      // CREATE RECIPES
-      // MAKE THE VEHICLE CUSTOM DYE-ABLE?
-      // MAKE SURE USERS CAN CREATE ALL THE ITEMS, BUILD THE BOBCAT AND THAT ALL MODES ARE WORKING
-      // ...
-      if (Patch_VehicleIntercept.turboCoroutine != null)
+      if (VehicleStatic.turboCoroutine != null)
       {
-        GameManager.Instance.StopCoroutine(Patch_VehicleIntercept.turboCoroutine);
-        Patch_VehicleIntercept.turboCoroutine = null;
+        GameManager.Instance.StopCoroutine(VehicleStatic.turboCoroutine);
+        VehicleStatic.turboCoroutine = null;
       }
 
-      if (Patch_VehicleIntercept.lightCoroutine != null)
+      if (VehicleStatic.lightCoroutine != null)
       {
-        GameManager.Instance.StopCoroutine(Patch_VehicleIntercept.lightCoroutine);
-        Patch_VehicleIntercept.lightCoroutine = null;
+        GameManager.Instance.StopCoroutine(VehicleStatic.lightCoroutine);
+        VehicleStatic.lightCoroutine = null;
       }
 
       ActivateDrillOff(vehicle);
@@ -1313,8 +1593,16 @@ namespace Bobcat
         foreach(AudioSource audio in VehicleStatic.vehicleModeAudioSources) GameManager.Instance.StartCoroutine(FadeOutAudio(audio, 2, audio.volume));
       }
 
+      // Restore falling block damage on exit vehicle
+      GameManager.Instance.myEntityPlayerLocal.Buffs.RemoveBuff("buffNoFallingBlockDamage");
+
+      // Update speed when exiting vehicle
+      SetVehicleModeSpeed(vehicle);
+
       // UI
       SetVehicleStatusWindow(false);
+      SetVehicleActivateWindow(false);
+      VehicleStatic.isCurrentModeActive = false;
 
     }
     public static void SetVehicleStatusWindow(bool show)
@@ -1327,12 +1615,8 @@ namespace Bobcat
           label = "None";
           spriteName = "BobcatStatusBGNone";
           break;
-        case VehicleStatic.BobcatMode.LandscapingLow:
-          label = "Landscape L";
-          spriteName = "BobcatStatusBGLandscapingLow";
-          break;
         case VehicleStatic.BobcatMode.LandscapingHigh:
-          label = "Landscape H";
+          label = "Landscape";
           spriteName = "BobcatStatusBGLandscapingHigh";
           break;
         case VehicleStatic.BobcatMode.Leveling:
@@ -1365,6 +1649,19 @@ namespace Bobcat
       bobcatStatusWindow.ForceVisible(show ? 1 : 0);
       bobcatStatusWindow.UpdateData();
     }
+    public static void SetVehicleActivateWindow(bool show)
+    {
+      string label = VehicleStatic.isCurrentModeActive ? "Active" : "Inactive";
+      string spriteName = VehicleStatic.isCurrentModeActive ? "BobcatActiveBG" : "BobcatInactiveBG";
+
+      XUiV_Window bobcatActivateWindow = (XUiV_Window)VehicleStatic.WindowBobcatActivate;
+      VehicleStatic.bobcatActivateLabel.SetTextImmediately(label);
+      VehicleStatic.bobcatActivateSprite.SetSpriteImmediately(spriteName);
+      bobcatActivateWindow.TargetAlpha = show ? 1 : 0;
+      bobcatActivateWindow.ForceHide = show;
+      bobcatActivateWindow.ForceVisible(show ? 1 : 0);
+      bobcatActivateWindow.UpdateData();
+    }
     private static void StopParticleIfAvailable(string key)
     {
       if (VehicleStatic.transformLookup.TryGetValue(key, out var transform))
@@ -1392,31 +1689,41 @@ namespace Bobcat
 
       return modifierNames;
     }
+    public static List<string> GetCosModifierNames(EntityVehicle vehicle)
+    {
+      VehicleStatic.actions = GameManager.Instance.myEntityPlayerLocal.playerInput?.VehicleActions;
+      ItemValue[] mods = vehicle.GetVehicle()?.itemValue?.CosmeticMods;
+      List<string> modifierNames = new List<string>();
+      if (mods != null)
+      {
+        modifierNames = mods
+          .Where(x => x != null && x.ItemClass != null)
+          .Select(x => x.ItemClass.GetItemName())
+          .ToList();
+      }
+
+      return modifierNames;
+    }
     public static IEnumerator RunVehicleMode(Enum vehicleMode, EntityVehicle vehicle)
     {
-      yield return new WaitForSeconds(BobcatConfig.TimeToWait);
-
       while (VehicleStatic.CurrentMode != VehicleStatic.BobcatMode.None)
       {
         switch (VehicleStatic.CurrentMode)
         {
-          case VehicleStatic.BobcatMode.LandscapingLow:
-            if (BobcatConfig.EnableLandscapingLowMode) RunLandscapingLowMode(vehicle);
-            break;
           case VehicleStatic.BobcatMode.LandscapingHigh:
-            if (BobcatConfig.EnableLandscapingHighMode) RunLandscapingHighMode(vehicle);
+            if (BobcatConfig.EnableLandscapingHighMode && VehicleStatic.isCurrentModeActive) RunLandscapingHighMode(vehicle);
             break;
           case VehicleStatic.BobcatMode.Tunneling:
-            if (BobcatConfig.EnableTunnelingMode) RunTunnelingMode(vehicle);
+            if (BobcatConfig.EnableTunnelingMode && VehicleStatic.isCurrentModeActive) RunTunnelingMode(vehicle);
             break;
           case VehicleStatic.BobcatMode.Filling:
-            if (BobcatConfig.EnableFillMode) RunFillMode(vehicle);
+            if (BobcatConfig.EnableFillMode && VehicleStatic.isCurrentModeActive) RunFillMode(vehicle);
             break;
           case VehicleStatic.BobcatMode.Leveling:
-            if (BobcatConfig.EnableLevelingMode) RunLevelingMode(vehicle);
+            if (BobcatConfig.EnableLevelingMode && VehicleStatic.isCurrentModeActive) RunLevelingMode(vehicle);
             break;
           case VehicleStatic.BobcatMode.Smoothing:
-            if (BobcatConfig.EnableTerrainSmoothing) RunSmoothingMode(vehicle);
+            if (BobcatConfig.EnableTerrainSmoothing && VehicleStatic.isCurrentModeActive) RunSmoothingMode(vehicle);
             break;
           default:
             break;
@@ -1564,7 +1871,7 @@ namespace Bobcat
       int height = GetHWDFromMods(mods)[0];
       int depth = GetHWDFromMods(mods)[2];
       int halfWidth = width / 2;
-      float heightOffset = VehicleStatic.bucketModeLow ? 0.5f : 1f;
+      float heightOffset = 1f;
       float widthOffset = (width % 2 == 0) ? 0.5f : 0f;
 
       for (int d = 0; d < depth; d++)
@@ -1615,9 +1922,6 @@ namespace Bobcat
         case VehicleStatic.BobcatMode.None:
           velocities = velocities.Select(v => v * BobcatConfig.NoneModeSpeedMultiplier).ToArray();
           break;
-        case VehicleStatic.BobcatMode.LandscapingLow:
-          velocities = velocities.Select(v => v * BobcatConfig.LandscapingLowModeSpeedMultiplier).ToArray();
-          break;
         case VehicleStatic.BobcatMode.LandscapingHigh:
           velocities = velocities.Select(v => v * BobcatConfig.LandscapingHighModeSpeedMultiplier).ToArray();
           break;
@@ -1653,13 +1957,20 @@ namespace Bobcat
 
           VehicleStatic.Views = GameManager.Instance?.myEntityPlayerLocal?.PlayerUI?.xui?.xuiViewList;
           VehicleStatic.WindowBobcatStatus = VehicleStatic.Views.Find(x => x.id == "VehicleModeStatusWindow");
+          VehicleStatic.WindowBobcatActivate = VehicleStatic.Views.Find(x => x.id == "VehicleModeActiveWindow");
+
           VehicleStatic.Labels = VehicleStatic.Views.FindAll(x => x is XUiV_Label);
           VehicleStatic.Sprites = VehicleStatic.Views.FindAll(x => x is XUiV_Sprite);
+
           VehicleStatic.bobcatStatusSprite = (XUiV_Sprite)VehicleStatic.Sprites.Find(x => x.id == "bobcatStatusBG");
           VehicleStatic.bobcatStatusLabel = (XUiV_Label)VehicleStatic.Labels.Find(x => x.id == "bobcatStatusLabel");
 
+          VehicleStatic.bobcatActivateSprite = (XUiV_Sprite)VehicleStatic.Sprites.Find(x => x.id == "bobcatActiveBG");
+          VehicleStatic.bobcatActivateLabel = (XUiV_Label)VehicleStatic.Labels.Find(x => x.id == "bobcatActiveLabel");
+
           // UI
           SetVehicleStatusWindow(false);
+          SetVehicleActivateWindow(false);
         }
 
         yield return new WaitForSeconds(1f);
@@ -1670,7 +1981,6 @@ namespace Bobcat
       public enum BobcatMode
       {
         None,
-        LandscapingLow,
         LandscapingHigh,
         Tunneling,
         Leveling,
@@ -1681,21 +1991,31 @@ namespace Bobcat
       public static BobcatMode CurrentMode = BobcatMode.None;
       public static ItemValue[] mods;
       public static PlayerActionsVehicle actions;
-      public static string[] transformNames = { "Exhaust", "ExhaustSuperCharger", "HeadLampsOn", "HeadLampsOff", "DrillOn", "DrillOff", "Plow2", "Plow3", "Plow4", "Plow5", "PedalDown", "pedalDownSuperCharger1", "pedalDownSuperCharger2", "Damaged", "HeavilyDamaged", "Audio", "DrillParticles", "SandParticles" };
+      public static string[] transformNames = { "Exhaust", "ExhaustSuperCharger", "HeadLampsOn", "HeadLampsOff", "DrillOn", "DrillOff", "Plow3", "Plow5", "PedalDown", "pedalDownSuperCharger1", "pedalDownSuperCharger2", "Damaged", "HeavilyDamaged", "Audio", "DrillParticles", "SandParticles", "BobcatBody" };
       public static Dictionary<string, Transform> transformLookup;
       public static bool lightsOn = false;
       public static List<EntityCreationData> vehicles;
-      public static bool bucketModeLow = true;
       public static List<EntityAlive> zombiesAndAnimals = new List<EntityAlive>();
       public static int vehicleLevelingModeHeight;
       public static List<AudioSource> vehicleModeAudioSources = new List<AudioSource>();
       public static XUiView WindowBobcatStatus;
+      public static XUiView WindowBobcatActivate;
       public static bool isPlayerLoggedIn = false;
       public static List<XUiView> Views = GameManager.Instance?.myEntityPlayerLocal?.PlayerUI?.xui?.xuiViewList;
       public static List<XUiView> Labels;
       public static List<XUiView> Sprites;
       public static XUiV_Sprite bobcatStatusSprite;
+      public static XUiV_Sprite bobcatActivateSprite;
       public static XUiV_Label bobcatStatusLabel;
+      public static XUiV_Label bobcatActivateLabel;
+      public static bool isCurrentModeActive = false;
+
+      public static bool wasHopPressedLastFrame = false;
+      public static bool wasHornPressedLastFrame = false;
+      public static bool lightWasOnLastFrame = false;
+      public static EntityVehicle lastAttachedVehicle = null;
+      public static Coroutine turboCoroutine = null;
+      public static Coroutine lightCoroutine = null;
 
       // Hides UI
       public static void HideWindowBobcatStatus()
@@ -1732,7 +2052,6 @@ namespace Bobcat
     }
     public static class BobcatConfig
     {
-      public static bool EnableLandscapingLowMode { get; private set; }
       public static bool EnableLandscapingHighMode { get; private set; }
       public static bool EnableTunnelingMode { get; private set; }
       public static bool EnableLevelingMode { get; private set; }
@@ -1753,7 +2072,6 @@ namespace Bobcat
       public static float ModeChangeAudioVolume { get; private set; }
       public static float LevelingModeAudioVolume { get; private set; }
       public static float NoneModeSpeedMultiplier { get; private set; }
-      public static float LandscapingLowModeSpeedMultiplier { get; private set; }
       public static float LandscapingHighModeSpeedMultiplier { get; private set; }
       public static float TunnelingModeSpeedMultiplier { get; private set; }
       public static float LevelingModeSpeedMultiplier  { get; private set; }
@@ -1808,7 +2126,6 @@ namespace Bobcat
           }
         }
 
-        EnableLandscapingLowMode = bool.Parse(settings["EnableLandscapingLowMode"].Trim());
         EnableLandscapingHighMode = bool.Parse(settings["EnableLandscapingHighMode"].Trim());
         EnableTunnelingMode = bool.Parse(settings["EnableTunnelingMode"].Trim());
         EnableLevelingMode = bool.Parse(settings["EnableLevelingMode"].Trim());
@@ -1828,7 +2145,6 @@ namespace Bobcat
         ModeChangeAudioVolume = float.Parse(settings["ModeChangeAudioVolume"].Trim());
         LevelingModeAudioVolume = float.Parse(settings["LevelingModeAudioVolume"].Trim());
         NoneModeSpeedMultiplier = float.Parse(settings["NoneModeSpeedMultiplier"].Trim());
-        LandscapingLowModeSpeedMultiplier = float.Parse(settings["LandscapingLowModeSpeedMultiplier"].Trim());
         LandscapingHighModeSpeedMultiplier = float.Parse(settings["LandscapingHighModeSpeedMultiplier"].Trim());
         TunnelingModeSpeedMultiplier = float.Parse(settings["TunnelingModeSpeedMultiplier"].Trim());
         LevelingModeSpeedMultiplier = float.Parse(settings["LevelingModeSpeedMultiplier"].Trim());

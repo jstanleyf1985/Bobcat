@@ -21,11 +21,11 @@
       <property name="waterDrag_y_velScale_velMaxScale" value="1.8, .9, .1"/>
       <property name="wheelPtlScale" value="1"/>
 
-      <property name="hornSound" value="Bobcat_horn"/>
+      <property name="hornSound" value="Bobcat_Silence"/>
 
       <property class="chassis">
         <property name="class" value="Chassis"/>
-        <!-- <property name="paint" value=""/> -->
+        <property name="paint" value="M/chassis"/>
       </property>
 
       

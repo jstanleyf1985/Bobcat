@@ -1,10 +1,17 @@
 Key,Source,Context,Changes,English,French,German,Klingon,Spanish,Polish
-
-<!-- ###### VEHICLE NEW ###### -->
-vehicleNewBobcat,vehicles,vehicle,new, New Bobcat,,,,,
-vehicleNewBobcatPlaceable,vehicles,item,EnChanged, Bobcat,,,,,
-vehicleNewBobcatPlaceableDesc,vehicles,item,EnChanged,Bobcat.,,,,,
-
-vehicleWrangler,vehicles,vehicle,new, Wrangler,,,,,
-vehicleWranglerPlaceable,vehicles,item,EnChanged, Wrangler,,,,,
-vehicleWranglerPlaceableDesc,vehicles,item,EnChanged,Wrangler,,,,,
+vehicleBobcat,vehicles,vehicle,new,Bobcat,,,,,
+vehicleBobcatPlaceable,vehicles,item,EnChanged,Bobcat,,,,,
+vehicleBobcatPlaceableDesc,vehicles,item,EnChanged,Bobcat,,,,,
+vehicleBobcatSchematicPlaceable,vehicles,item,EnChanged,Bobcat Schematic,,,,,
+vehicleBucket3,vehicles,vehicle,new, Bucket (Small),,,,,
+modVehicleBucket3,vehicles,vehicle,new, Bucket (Small),,,,,
+vehicleBucket3Schematic,vehicles,item,EnChanged,Bucket (Small) Schematic,,,,,
+vehicleBucket5,vehicles,vehicle,new, Bucket (Large),,,,,
+modVehicleBucket5,vehicles,vehicle,new, Bucket (Large),,,,,
+vehicleBucket5Schematic,vehicles,item,EnChanged,Bucket (Large) Schematic,,,,,
+vehicleDrill,vehicles,vehicle,new,Bobcat Drill,,,,,
+modVehicleDrill,vehicles,vehicle,new,Bobcat Drill,,,,,
+vehicleDrillSchematic,vehicles,item,EnChanged,Bobcat Drill Schematic,,,,,
+vehicleTractionControl,vehicles,vehicle,new,Bobcat Traction Control,,,,,
+modTractionControl,vehicles,vehicle,new,Bobcat Traction Control,,,,,
+modTractionControlSchematic,vehicles,item,EnChanged,Bobcat Traction Control Schematic,,,,,
