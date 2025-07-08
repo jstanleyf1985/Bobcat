@@ -68,7 +68,7 @@
       <property name="Extends" value="schematicNoQualityMaster"/>
       <property name="CreativeMode" value="Player"/>
       <property name="CustomIcon" value="TractionControl"/>
-      <property name="Unlocks" value="modmodTractionControl"/>
+      <property name="Unlocks" value="modTractionControl"/>
       <effect_group tiered="false">
         <triggered_effect trigger="onSelfPrimaryActionEnd" action="ModifyCVar" cvar="modTractionControl" operation="set" value="1"/>
         <triggered_effect trigger="onSelfPrimaryActionEnd" action="GiveExp" exp="50"/>

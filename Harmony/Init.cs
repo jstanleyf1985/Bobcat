@@ -1,16 +1,14 @@
 ﻿using HarmonyLib;
-using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-using static Bobcat.Vehicle;
-using static SaveDataPrefsFile;
 
 namespace Bobcat
 {
-  public class Bobcat : IModApi
+  public partial class BobcatVehicle : IModApi
   {
-    private static AssetBundle bobcatBundle = null;
-    public static void BobcatStart(ref ModEvents.SGameStartDoneData _data)
+    public static AssetBundle bobcatBundle = null;
+    public static void BobcatStart()
+    //public static void BobcatStart(ref ModEvents.SGameStartDoneData _data)
     {
       BobcatConfig.Load(System.IO.Path.Combine(ModManager.GetMod("Bobcat")?.Path, "Configuration.xml"));
 
@@ -18,15 +16,19 @@ namespace Bobcat
       GameManager.Instance.StartCoroutine(BobcatUpdateVisualsCoroutine());
       GameManager.Instance.StartCoroutine(OnPlayerLoggedIn());
       LoadBobcatParticles();
+      
     }
 
-    public static void BobcatShutdown(ref ModEvents.SWorldShuttingDownData _data)
+    public static void BobcatShutdown()
+    //public static void BobcatShutdown(ref ModEvents.SWorldShuttingDownData _data)
     {
       if (bobcatBundle != null)
       {
-        bobcatBundle.Unload(unloadAllLoadedObjects: false); // or true if you want to fully free all memory
+        bobcatBundle.Unload(unloadAllLoadedObjects: false);
         bobcatBundle = null;
       }
+
+      VehicleStatic.vehicles.Clear();
     }
 
     public static void LoadBobcatParticles()
@@ -70,7 +72,7 @@ namespace Bobcat
     {
       Log.Out(" Loading Patch: " + GetType());
 
-      var harmony = new Harmony(GetType().ToString());
+      var harmony = new HarmonyLib.Harmony(GetType().ToString());
       harmony.PatchAll(Assembly.GetExecutingAssembly());
 
       ModEvents.GameStartDone.RegisterHandler(BobcatStart);

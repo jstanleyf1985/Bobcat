@@ -109,7 +109,20 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Harmony\Init.cs" />
-    <Compile Include="Harmony\Vehicle.cs" />
+    <Compile Include="Harmony\VehicleMain.cs" />
+    <Compile Include="Harmony\VehicleAudio.cs" />
+    <Compile Include="Harmony\VehicleCommonUtils.cs" />
+    <Compile Include="Harmony\VehicleConstants.cs" />
+    <Compile Include="Harmony\VehicleDamageUtils.cs" />
+    <Compile Include="Harmony\VehicleInputHandlers.cs" />
+    <Compile Include="Harmony\VehicleModeHandler.cs" />
+    <Compile Include="Harmony\VehicleModHelpers.cs" />
+    <Compile Include="Harmony\VehicleParticles.cs" />
+    <Compile Include="Harmony\VehiclePatches.cs" />
+    <Compile Include="Harmony\VehiclePhysicsUtils.cs" />
+    <Compile Include="Harmony\VehicleTerrainUtils.cs" />
+    <Compile Include="Harmony\VehicleUIManager.cs" />
+    <Compile Include="Harmony\VehicleVisuals.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

@@ -15,6 +15,7 @@
 	<setting key="EnableZombieDamage">true</setting> <!-- Enable drill/bucket to deal zombie damage -->
 	<setting key="EnableZombieRagdoll">true</setting> <!-- Enable drill/bucket to ragdoll zombies -->
 	<setting key="EnableTractionControl">true</setting> <!-- Enables better traction when digging -->
+	<setting key="AllowTraderBlockDestruction">false</setting> <!-- Allows trader areas to be destroyed by the bobcat actions -->
 	
 	
 	<!-- Feature Values -->
@@ -127,6 +128,8 @@
 	<setting key="BlockNamesToIgnore">
 		keystoneBlock,
 		terrBedrock,
+		questRallyMarker,
+		spawnTrader,
 		cntWallSafe,
 		cntWallSafeInsecure,
 		cntWallSafeOpen,

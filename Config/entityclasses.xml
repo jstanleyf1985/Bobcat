@@ -11,7 +11,7 @@
 			<property name="IgnoreTrigger" value="true"/>
 			<property name="LootListAlive" value="vehicle4x4Truck"/>
 			<property name="IsEnemyEntity" value="false"/>
-			<property name="Explosion.ParticleIndex" value="6"/>
+			<property name="Explosion.ParticleIndex" value="2"/>
 			<property name="Explosion.RadiusBlocks" value="5"/>
 			<property name="Explosion.RadiusEntities" value="5"/>
 			<property name="Explosion.BlockDamage" value="100"/>
