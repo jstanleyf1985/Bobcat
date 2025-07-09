@@ -7,8 +7,8 @@ namespace Bobcat
   public partial class BobcatVehicle : IModApi
   {
     public static AssetBundle bobcatBundle = null;
-    public static void BobcatStart()
-    //public static void BobcatStart(ref ModEvents.SGameStartDoneData _data)
+    //public static void BobcatStart()
+    public static void BobcatStart(ref ModEvents.SGameStartDoneData _data)
     {
       BobcatConfig.Load(System.IO.Path.Combine(ModManager.GetMod("Bobcat")?.Path, "Configuration.xml"));
 
@@ -19,16 +19,63 @@ namespace Bobcat
       
     }
 
-    public static void BobcatShutdown()
-    //public static void BobcatShutdown(ref ModEvents.SWorldShuttingDownData _data)
+    public static void BobcatShutdown(ref ModEvents.SWorldShuttingDownData _data)
+    //public static void BobcatShutdown()
     {
-      if (bobcatBundle != null)
-      {
-        bobcatBundle.Unload(unloadAllLoadedObjects: false);
-        bobcatBundle = null;
-      }
+      // Stop running coroutines
+      if (VehicleStatic.turboCoroutine != null) GameManager.Instance.StopCoroutine(VehicleStatic.turboCoroutine);
+      if (VehicleStatic.lightCoroutine != null) GameManager.Instance.StopCoroutine(VehicleStatic.lightCoroutine);
 
-      VehicleStatic.vehicles.Clear();
+      // Clear vehicle and state dictionaries
+      BobcatDamageStates?.Clear();
+      DamagedBobcats?.Clear();
+      VehicleStatic.transformLookup?.Clear();
+      VehicleStatic.vehicles?.Clear();
+      VehicleStatic.zombiesAndAnimals?.Clear();
+      VehicleStatic.vehicleModeAudioSources?.Clear();
+
+      // Clear UI and visual mappings
+      VehicleStatic.Views?.Clear();
+      VehicleStatic.Labels?.Clear();
+      VehicleStatic.Sprites?.Clear();
+
+      // Reset configuration lists
+      BobcatConfig.HarvestableBlockList?.Clear();
+      BobcatConfig.FillModeValidTerrainItems?.Clear();
+      BobcatConfig.EntityNamesToIgnoreList?.Clear();
+      BobcatConfig.BlockNamesToIgnoreList?.Clear();
+
+      // Reset audio
+      VehicleStatic.vehicleModeAudioSources?.Clear();
+
+      // Reset references
+      VehicleStatic.lastAttachedVehicle = null;
+      VehicleStatic.turboCoroutine = null;
+      VehicleStatic.lightCoroutine = null;
+
+      // Reset flags
+      VehicleStatic.isCurrentModeActive = false;
+      VehicleStatic._isMaxVelocitySet = false;
+      VehicleStatic.CurrentMode = VehicleStatic.BobcatMode.None;
+
+      // Reset indexing counters
+      BobcatVehicle.BobcatParticleManager.ResetIndices();
+
+      VehicleStatic.Views = null;
+      VehicleStatic.Labels = null;
+      VehicleStatic.Sprites = null;
+
+      VehicleStatic.bobcatStatusSprite = null;
+      VehicleStatic.bobcatStatusLabel = null;
+      VehicleStatic.bobcatActivateSprite = null;
+      VehicleStatic.bobcatActivateLabel = null;
+
+      VehicleStatic.WindowBobcatStatus = null;
+      VehicleStatic.WindowBobcatActivate = null;
+
+      VehicleStatic.isPlayerLoggedIn = false;
+
+      Log.Out("Bobcat Mod: Shutdown cleanup complete.");
     }
 
     public static void LoadBobcatParticles()

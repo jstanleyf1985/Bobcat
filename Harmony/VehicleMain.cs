@@ -138,38 +138,69 @@ namespace Bobcat
       while (!VehicleStatic.isPlayerLoggedIn)
       {
         var player = GameManager.Instance?.myEntityPlayerLocal;
-        var viewsReady = player?.PlayerUI?.xui?.xuiViewList != null;
 
-        if (player?.entityId != -1 && viewsReady)
+        // Wait until player and UI are valid
+        if (player != null && player.entityId != -1)
         {
-          // Optional short delay to ensure UI system is fully ready
-          yield return new WaitForSeconds(2.0f); // tweak between 0.5–2.0 as needed
+          var views = player?.PlayerUI?.xui?.xuiViewList;
+          bool hasViews = views != null && views.Count > 0;
 
-          VehicleStatic.isPlayerLoggedIn = true;
+          if (hasViews)
+          {
+            // Optional delay to ensure views are fully populated
+            yield return new WaitForSeconds(2.0f);
 
-          VehicleStatic.Views = player.PlayerUI.xui.xuiViewList;
-          VehicleStatic.WindowBobcatStatus = VehicleStatic.Views.Find(x => x.id == "VehicleModeStatusWindow");
-          VehicleStatic.WindowBobcatActivate = VehicleStatic.Views.Find(x => x.id == "VehicleModeActiveWindow");
+            VehicleStatic.Views = views;
+            VehicleStatic.WindowBobcatStatus = views.Find(x => x.id == "VehicleModeStatusWindow");
+            VehicleStatic.WindowBobcatActivate = views.Find(x => x.id == "VehicleModeActiveWindow");
 
-          VehicleStatic.Labels = VehicleStatic.Views.FindAll(x => x is XUiV_Label);
-          VehicleStatic.Sprites = VehicleStatic.Views.FindAll(x => x is XUiV_Sprite);
+            VehicleStatic.Labels = views.FindAll(x => x is XUiV_Label);
+            VehicleStatic.Sprites = views.FindAll(x => x is XUiV_Sprite);
 
-          VehicleStatic.bobcatStatusSprite = (XUiV_Sprite)VehicleStatic.Sprites.Find(x => x.id == "bobcatStatusBG");
-          VehicleStatic.bobcatStatusLabel = (XUiV_Label)VehicleStatic.Labels.Find(x => x.id == "bobcatStatusLabel");
+            VehicleStatic.bobcatStatusSprite = (XUiV_Sprite)VehicleStatic.Sprites.Find(x => x.id == "bobcatStatusBG");
+            VehicleStatic.bobcatStatusLabel = (XUiV_Label)VehicleStatic.Labels.Find(x => x.id == "bobcatStatusLabel");
 
-          VehicleStatic.bobcatActivateSprite = (XUiV_Sprite)VehicleStatic.Sprites.Find(x => x.id == "bobcatActiveBG");
-          VehicleStatic.bobcatActivateLabel = (XUiV_Label)VehicleStatic.Labels.Find(x => x.id == "bobcatActiveLabel");
+            VehicleStatic.bobcatActivateSprite = (XUiV_Sprite)VehicleStatic.Sprites.Find(x => x.id == "bobcatActiveBG");
+            VehicleStatic.bobcatActivateLabel = (XUiV_Label)VehicleStatic.Labels.Find(x => x.id == "bobcatActiveLabel");
 
-          // hide if not in vehicle
-          VehicleStatic.WindowBobcatStatus?.OnClose();
-          VehicleStatic.WindowBobcatActivate?.OnClose();
-          SetVehicleStatusWindow(false, false);
-          SetVehicleActivateWindow(false);
+            // Set default/fallback label values
+            if (VehicleStatic.bobcatActivateLabel != null)
+            {
+              VehicleStatic.bobcatActivateLabel.SetTextImmediately("Inactive");
+              Log.Out("Bobcat Mod: Set activate label to 'Inactive'");
+            }
+
+            if (VehicleStatic.bobcatStatusLabel != null)
+            {
+              VehicleStatic.bobcatStatusLabel.SetTextImmediately("Stopped");
+              Log.Out("Bobcat Mod: Set status label to 'Stopped'");
+            }
+
+            // Only mark as logged in if everything was found
+            if (VehicleStatic.bobcatActivateLabel != null && VehicleStatic.bobcatStatusLabel != null)
+            {
+              VehicleStatic.isPlayerLoggedIn = true;
+
+              // Hide windows by default
+              VehicleStatic.WindowBobcatStatus?.OnClose();
+              VehicleStatic.WindowBobcatActivate?.OnClose();
+              SetVehicleStatusWindow(false, false);
+              SetVehicleActivateWindow(false);
+
+              Log.Warning("Bobcat Mod: Player UI initialized successfully.");
+              yield break;
+            }
+            else
+            {
+              Log.Warning("Bobcat Mod: Labels not fully initialized, retrying...");
+            }
+          }
         }
 
         yield return new WaitForSeconds(1f);
       }
     }
+
     public static class VehicleStatic
     {
       public enum BobcatMode
@@ -225,7 +256,7 @@ namespace Bobcat
 
       // Max velocity is used as a reference and should not change once set
       private static float[] _maxVelocity;
-      private static bool _isMaxVelocitySet = false;
+      public static bool _isMaxVelocitySet = false;
 
       public static float[] MaxVelocity => _maxVelocity;
 
@@ -243,6 +274,7 @@ namespace Bobcat
         };
 
         _isMaxVelocitySet = true;
+
       }
     }
     public static class BobcatConfig

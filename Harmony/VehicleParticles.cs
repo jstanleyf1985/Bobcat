@@ -11,6 +11,12 @@ namespace Bobcat
       private static int dustIndex = 0;
       private static int bloodIndex = 0;
 
+      public static void ResetIndices()
+      {
+        dustIndex = 0;
+        bloodIndex = 0;
+      }
+
       public static string GetNextDust()
       {
         string name = DustVariants[dustIndex];

@@ -2,12 +2,10 @@
 
 	<append xpath="/Sounds">
 		<SoundDataNode name="Bobcat_horn">
-			<!-- 2.0
       <AudioSource name="@:Sounds/Prefabs/AudioSource_WeaponFire.prefab"/>
       <NetworkAudioSource name="@:Sounds/Prefabs/AudioSource_WeaponFire_Network.prefab"/>
-      -->
-      <AudioSource name="Sounds/AudioSource_WeaponFire.prefab"/>
-      <NetworkAudioSource name="Sounds/AudioSource_WeaponFire_Network.prefab"/>
+      <!-- <AudioSource name="Sounds/AudioSource_WeaponFire"/>
+      <NetworkAudioSource name="Sounds/AudioSource_WeaponFire_Network"/> -->
 			<Noise ID="5" noise="200" time="2" heat_map_strength="0" heat_map_time="0"/>
 			<AudioClip ClipName="#@modfolder:Resources/BobcatHornPrefab.unity3d?BobcatHorn"/>
 			<LocalCrouchVolumeScale value="1"/>
@@ -19,12 +17,10 @@
 		</SoundDataNode>
 
     <SoundDataNode name="Bobcat_Silence">
-      <!-- 2.0
       <AudioSource name="@:Sounds/Prefabs/AudioSource_WeaponFire.prefab"/>
       <NetworkAudioSource name="@:Sounds/Prefabs/AudioSource_WeaponFire_Network.prefab"/>
-      -->
-			<AudioSource name="Sounds/AudioSource_WeaponFire.prefab"/>
-      <NetworkAudioSource name="Sounds/AudioSource_WeaponFire_Network.prefab"/>
+			<!-- <AudioSource name="Sounds/AudioSource_WeaponFire"/>
+      <NetworkAudioSource name="Sounds/AudioSource_WeaponFire_Network"/> -->
 			<Noise ID="5" noise="200" time="2" heat_map_strength="0" heat_map_time="0"/>
 			<AudioClip ClipName="#@modfolder:Resources/SilencePrefab.unity3d?Silence"/>
 			<LocalCrouchVolumeScale value="1"/>

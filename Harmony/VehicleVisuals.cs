@@ -324,7 +324,10 @@ namespace Bobcat
         SetDyeColor(vehicle, bobcatBodyT, "#FFFFFF");
 
         ItemValue newVehItemVal = vehicle.GetVehicle().itemValue.Clone();
-        newVehItemVal.CosmeticMods = new ItemValue[] { };
+        newVehItemVal.CosmeticMods = new ItemValue[]
+        {
+          new ItemValue()
+        };
 
         vehicle.GetVehicle().SetItemValueMods(newVehItemVal);
         vehicle.GetVehicle().SetColors();
