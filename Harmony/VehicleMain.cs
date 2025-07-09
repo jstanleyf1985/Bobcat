@@ -86,6 +86,9 @@ namespace Bobcat
       // UI
       SetVehicleStatusWindow(true, false);
       SetVehicleActivateWindow(true);
+
+      // Light Indicators
+      UpdateVehicleLights(vehicle);
     }
     public static void HandleExitVehicle(EntityVehicle vehicle)
     {
@@ -131,6 +134,9 @@ namespace Bobcat
       SetVehicleStatusWindow(false, false);
       SetVehicleActivateWindow(false);
       VehicleStatic.isCurrentModeActive = false;
+
+      // Light Indicators
+      UpdateVehicleLights(vehicle);
 
     }
     public static IEnumerator OnPlayerLoggedIn()
@@ -216,7 +222,7 @@ namespace Bobcat
       public static BobcatMode CurrentMode = BobcatMode.None;
       public static ItemValue[] mods;
       public static PlayerActionsVehicle actions;
-      public static string[] transformNames = { "Exhaust", "ExhaustSuperCharger", "HeadLampsOn", "HeadLampsOff", "DrillOn", "DrillOff", "Plow3", "Plow5", "PedalDown", "pedalDownSuperCharger1", "pedalDownSuperCharger2", "Damaged", "HeavilyDamaged", "Audio", "DrillParticles", "SandParticles", "BobcatBody" };
+      public static string[] transformNames = { "Exhaust", "ExhaustSuperCharger", "HeadLampsOn", "HeadLampsOff", "DrillOn", "DrillOff", "Plow3", "Plow5", "PedalDown", "pedalDownSuperCharger1", "pedalDownSuperCharger2", "Damaged", "HeavilyDamaged", "Audio", "DrillParticles", "SandParticles", "BobcatBody", "BobcatLightActive", "BobcatLightInactive", "BobcatLightLandscaping", "BobcatLightLeveling", "BobcatLightFilling", "BobcatLightTunneling", "BobcatLightSmoothing", "BobcatLightNone" };
       public static Dictionary<string, Transform> transformLookup;
       public static bool lightsOn = false;
       public static List<EntityCreationData> vehicles;
@@ -247,10 +253,15 @@ namespace Bobcat
       public static void HideWindowBobcatStatus()
       {
         XUiV_Window bobcatStatusWindow = (XUiV_Window)VehicleStatic.WindowBobcatStatus;
+        XUiV_Window bobcatActivateWindow = (XUiV_Window)VehicleStatic.WindowBobcatActivate;
         bobcatStatusWindow.TargetAlpha = 0f;
+        bobcatActivateWindow.TargetAlpha = 0f;
         bobcatStatusWindow.ForceHide = true;
+        bobcatActivateWindow.ForceHide = true;
         bobcatStatusWindow.ForceVisible(0);
+        bobcatActivateWindow.ForceVisible(1);
         bobcatStatusWindow.UpdateData();
+        bobcatActivateWindow.UpdateData();
       }
 
 
@@ -291,6 +302,8 @@ namespace Bobcat
       public static bool EnableZombieRagdoll { get; private set; }
       public static bool EnableTractionControl { get; private set; }
       public static bool AllowTraderBlockDestruction { get; private set; }
+      public static bool EnableUI { get; private set; }
+      public static bool EnableStatusLights { get; private set; }
 
       public static int TerrainDamage { get; private set; }
       public static int EntityDamage { get; private set; }
@@ -366,6 +379,8 @@ namespace Bobcat
         EnableZombieRagdoll = bool.Parse(settings["EnableZombieRagdoll"].Trim());
         EnableTractionControl = bool.Parse(settings["EnableTractionControl"].Trim());
         AllowTraderBlockDestruction = bool.Parse(settings["AllowTraderBlockDestruction"].Trim());
+        EnableUI = bool.Parse(settings["EnableUI"].Trim());
+        EnableStatusLights = bool.Parse(settings["EnableStatusLights"].Trim());
 
         TerrainDamage = int.Parse(settings["TerrainDamage"].Trim());
         EntityDamage = int.Parse(settings["EntityDamage"].Trim());

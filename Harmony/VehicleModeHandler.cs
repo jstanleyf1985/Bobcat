@@ -32,6 +32,7 @@ namespace Bobcat
         if (VehicleStatic.CurrentMode != VehicleStatic.BobcatMode.None) VehicleStatic.isCurrentModeActive = !VehicleStatic.isCurrentModeActive;
         if (VehicleStatic.CurrentMode == VehicleStatic.BobcatMode.None) GameManager.Instance.PlaySoundAtPositionServer(vehicle.position, "Bobcat_horn", AudioRolloffMode.Linear, 20);
         SetVehicleActivateWindow(true);
+        UpdateVehicleLights(vehicle);
 
         // Set leveling/filling reference height on activated
         if (VehicleStatic.isCurrentModeActive) VehicleStatic.vehicleLevelingModeHeight = GetLevelingReferencePosition(vehicle).y;
@@ -60,6 +61,9 @@ namespace Bobcat
 
         AudioSource fillAudioComponent = bobcatAudioT.Find("RockLeveling").GetComponentInChildren<AudioSource>();
         AudioSource modeChangeAudioComponent = bobcatAudioT.Find("ModeChange").GetComponentInChildren<AudioSource>();
+
+        // Update Lights
+        UpdateVehicleLights(vehicle);
 
         // Attempt to find the next valid mode
         for (int i = 1; i <= modeValues.Count; i++)
