@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
 using System.Reflection;
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Bobcat
 {
@@ -16,7 +18,6 @@ namespace Bobcat
       GameManager.Instance.StartCoroutine(BobcatUpdateVisualsCoroutine());
       GameManager.Instance.StartCoroutine(OnPlayerLoggedIn());
       LoadBobcatParticles();
-      
     }
 
     public static void BobcatShutdown(ref ModEvents.SWorldShuttingDownData _data)

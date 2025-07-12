@@ -106,33 +106,39 @@ namespace Bobcat
     }
     public static List<string> GetModifierNames(EntityVehicle vehicle)
     {
-      VehicleStatic.actions = GameManager.Instance.myEntityPlayerLocal.playerInput?.VehicleActions;
-      ItemValue[] mods = vehicle.GetVehicle()?.itemValue?.Modifications;
-      List<string> modifierNames = new List<string>();
-      if (mods != null)
+      if (vehicle == null || vehicle.EntityClass == null || vehicle.EntityClass.entityClassName != "vehicleBobcat")
+        return new List<string>();
+
+      if (GameManager.Instance?.myEntityPlayerLocal != null)
       {
-        modifierNames = mods
+        VehicleStatic.actions = GameManager.Instance.myEntityPlayerLocal.playerInput?.VehicleActions;
+      }
+
+      ItemValue[] mods = vehicle.GetVehicle()?.itemValue?.Modifications;
+      if (mods == null) return new List<string>();
+
+      return mods
           .Where(x => x != null && x.ItemClass != null)
           .Select(x => x.ItemClass.GetItemName())
           .ToList();
-      }
-
-      return modifierNames;
     }
     public static List<string> GetCosModifierNames(EntityVehicle vehicle)
     {
-      VehicleStatic.actions = GameManager.Instance.myEntityPlayerLocal.playerInput?.VehicleActions;
-      ItemValue[] mods = vehicle.GetVehicle()?.itemValue?.CosmeticMods;
-      List<string> modifierNames = new List<string>();
-      if (mods != null)
+      if (vehicle == null || vehicle.EntityClass == null || vehicle.EntityClass.entityClassName != "vehicleBobcat")
+        return new List<string>();
+
+      if (GameManager.Instance?.myEntityPlayerLocal != null)
       {
-        modifierNames = mods
+        VehicleStatic.actions = GameManager.Instance.myEntityPlayerLocal.playerInput?.VehicleActions;
+      }
+
+      ItemValue[] mods = vehicle.GetVehicle()?.itemValue?.CosmeticMods;
+      if (mods == null) return new List<string>();
+
+      return mods
           .Where(x => x != null && x.ItemClass != null)
           .Select(x => x.ItemClass.GetItemName())
           .ToList();
-      }
-
-      return modifierNames;
     }
     public static Dictionary<int, ItemStack> GetNextTerrainResource(EntityVehicle vehicle, ItemStack[] vehicleInventory)
     {

@@ -348,6 +348,16 @@ namespace Bobcat
       public static float InfernalZombieDamageMultiplier { get; private set; }
       public static float AnimalDamageMultiplier { get; private set; }
 
+      // Translation Settings
+      public static string Inactive { get; private set; }
+      public static string Active { get; private set; }
+      public static string None { get; private set; }
+      public static string Landscaping {  get; private set; }
+      public static string Leveling { get; private set; }
+      public static string Tunneling { get; private set; }
+      public static string Filling { get; private set; }
+      public static string Smoothing {  get; private set; }
+
       public static List<string> HarvestableBlockList { get; private set; }
       public static List<string> FillModeValidTerrainItems { get; private set; }
       public static List<string> EntityNamesToIgnoreList { get; private set; }
@@ -417,6 +427,16 @@ namespace Bobcat
         ConcreteHarvestMultiplier = float.Parse(settings["ConcreteHarvestMultiplier"].Trim());
         MetalHarvestMultiplier = float.Parse(settings["MetalHarvestMultiplier"].Trim());
         PlantHarvestMultiplier = float.Parse(settings["PlantHarvestMultiplier"].Trim());
+
+        // Translation Settings
+        Inactive = settings["Inactive"].Trim();
+        Active = settings["Active"].Trim();
+        None = settings["None"].Trim();
+        Landscaping = settings["Landscaping"].Trim();
+        Leveling = settings["Leveling"].Trim();
+        Tunneling = settings["Tunneling"].Trim();
+        Filling = settings["Filling"].Trim();
+        Smoothing = settings["Smoothing"].Trim();
 
         ZombieDamageMultiplier = float.Parse(settings["ZombieDamageMultiplier"].Trim());
         FeralZombieDamageMultiplier = float.Parse(settings["FeralZombieDamageMultiplier"].Trim());

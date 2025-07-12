@@ -9,6 +9,7 @@
 			<property name="DropMeshfile" value="Items/Misc/sack_droppedPrefab"/>
 			<property name="EconomicValue" value="15000"/>
 			<property name="TraderStageTemplate" value="vehicleTier4"/>
+      <property name="UnlockedBy" value="vehicleBobcatPlaceableSchematic"/>
 			<property class="Action1">
 				<property name="Class" value="SpawnVehicle"/>
 				<property name="Vehicle" value="vehicleBobcat"/>

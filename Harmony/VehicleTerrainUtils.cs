@@ -119,6 +119,10 @@ namespace Bobcat
 
         vehicle.bag.SetSlot(itemStack.Key, vehicleInventory[itemStack.Key]);
 
+        vehicle.SetBagModified();
+        vehicle.bag.onBackpackChanged();
+
+
         // Play particles
         if (BobcatConfig.EnableDustParticles)
         {

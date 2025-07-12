@@ -29,44 +29,44 @@ namespace Bobcat
         }
 
         // Turn off all mode lights just in case
-        SetVehicleStatusModeLight(null, false, "None");
+        SetVehicleStatusModeLight(null, false, BobcatConfig.None);
         return;
       }
 
       // Determine current label and sprite based on mode
-      string label = "None";
+      string label = BobcatConfig.None;
       string spriteName = "BobcatStatusBGNone";
-      string modeString = "None";
+      string modeString = BobcatConfig.None;
 
       switch (VehicleStatic.CurrentMode)
       {
         case VehicleStatic.BobcatMode.LandscapingHigh:
-          label = "Landscape";
+          label = BobcatConfig.Landscaping;
           spriteName = "BobcatStatusBGLandscapingHigh";
-          modeString = "Landscaping";
+          modeString = BobcatConfig.Landscaping;
           break;
         case VehicleStatic.BobcatMode.Leveling:
-          label = "Leveling";
+          label = BobcatConfig.Leveling;
           spriteName = showRedSprite ? "BobcatStatusBGLevelingRed" : "BobcatStatusBGLeveling";
-          modeString = "Leveling";
+          modeString = BobcatConfig.Leveling;
           break;
         case VehicleStatic.BobcatMode.Filling:
-          label = "Fill";
+          label = BobcatConfig.Filling;
           spriteName = showRedSprite ? "BobcatStatusBGFillingRed" : "BobcatStatusBGFilling";
-          modeString = "Filling";
+          modeString = BobcatConfig.Filling;
           break;
         case VehicleStatic.BobcatMode.Tunneling:
-          label = "Tunneling";
+          label = BobcatConfig.Tunneling;
           spriteName = "BobcatStatusBGTunneling";
-          modeString = "Tunneling";
+          modeString = BobcatConfig.Tunneling;
           break;
         case VehicleStatic.BobcatMode.Smoothing:
-          label = "Smoothing";
+          label = BobcatConfig.Smoothing;
           spriteName = "BobcatStatusBGSmoothing";
-          modeString = "Smoothing";
+          modeString = BobcatConfig.Smoothing;
           break;
         default:
-          modeString = "None";
+          modeString = BobcatConfig.None;
           break;
       }
 
@@ -111,7 +111,7 @@ namespace Bobcat
       }
 
       // Valid Bobcat vehicle — update UI
-      string label = VehicleStatic.isCurrentModeActive ? "Active" : "Inactive";
+      string label = VehicleStatic.isCurrentModeActive ? BobcatConfig.Active : BobcatConfig.Inactive;
       string spriteName = VehicleStatic.isCurrentModeActive ? "BobcatActiveBG" : "BobcatInactiveBG";
 
       VehicleStatic.bobcatActivateLabel?.SetTextImmediately(label);
@@ -141,12 +141,12 @@ namespace Bobcat
 
       var statusLightMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
       {
-        { "Landscaping", "BobcatLightLandscaping" },
-        { "Leveling",    "BobcatLightLeveling" },
-        { "Tunneling",   "BobcatLightTunneling" },
-        { "Filling",     "BobcatLightFilling" },
-        { "Smoothing",   "BobcatLightSmoothing" },
-        { "None",        "BobcatLightNone" }
+        { BobcatConfig.Landscaping, "BobcatLightLandscaping" },
+        { BobcatConfig.Leveling,    "BobcatLightLeveling" },
+        { BobcatConfig.Tunneling,   "BobcatLightTunneling" },
+        { BobcatConfig.Filling,     "BobcatLightFilling" },
+        { BobcatConfig.Smoothing,   "BobcatLightSmoothing" },
+        { BobcatConfig.None,        "BobcatLightNone" }
       };
 
       // Turn off all mode lights first
@@ -157,7 +157,7 @@ namespace Bobcat
       }
 
       // Enable the target light if valid
-      if (statusLightMap.TryGetValue(status ?? "None", out var targetLightName) &&
+      if (statusLightMap.TryGetValue(status ?? BobcatConfig.None, out var targetLightName) &&
           VehicleStatic.transformLookup.TryGetValue(targetLightName, out var targetLight))
       {
         targetLight.gameObject.SetActive(enabled);
@@ -169,7 +169,7 @@ namespace Bobcat
       if (vehicle == null || vehicle.EntityClass == null || vehicle.EntityClass.entityClassName != "vehicleBobcat")
       {
         SetVehicleStatusPowerLights(null, false);
-        SetVehicleStatusModeLight(null, false, "None");
+        SetVehicleStatusModeLight(null, false, BobcatConfig.None);
         return;
       }
 
@@ -177,16 +177,16 @@ namespace Bobcat
       SetVehicleStatusPowerLights(vehicle, VehicleStatic.isCurrentModeActive);
 
       // Update the correct mode light based on current mode
-      string mode = "None";
+      string mode = BobcatConfig.None;
       switch (VehicleStatic.CurrentMode)
       {
-        case VehicleStatic.BobcatMode.LandscapingHigh: mode = "Landscaping"; break;
-        case VehicleStatic.BobcatMode.Leveling: mode = "Leveling"; break;
-        case VehicleStatic.BobcatMode.Tunneling: mode = "Tunneling"; break;
-        case VehicleStatic.BobcatMode.Filling: mode = "Filling"; break;
-        case VehicleStatic.BobcatMode.Smoothing: mode = "Smoothing"; break;
+        case VehicleStatic.BobcatMode.LandscapingHigh: mode = BobcatConfig.Landscaping; break;
+        case VehicleStatic.BobcatMode.Leveling: mode = BobcatConfig.Leveling; break;
+        case VehicleStatic.BobcatMode.Tunneling: mode = BobcatConfig.Tunneling; break;
+        case VehicleStatic.BobcatMode.Filling: mode = BobcatConfig.Filling; break;
+        case VehicleStatic.BobcatMode.Smoothing: mode = BobcatConfig.Smoothing; break;
         case VehicleStatic.BobcatMode.None:
-        default: mode = "None"; break;
+        default: mode = BobcatConfig.None; break;
       }
 
       SetVehicleStatusModeLight(vehicle, true, mode);

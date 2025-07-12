@@ -58,7 +58,6 @@ namespace Bobcat
         vehicle.SetBagModified();
         vehicle.bag.onBackpackChanged();
         vehicle.UpdateInteractionUI();
-
         UpdateVehicleVisuals(vehicle);
       }
     }
@@ -101,6 +100,9 @@ namespace Bobcat
                   ItemValue itemValue = new ItemValue(itemClass.Id, false);
                   ItemStack stack = new ItemStack(itemValue, Mathf.Clamp(configAmount, 1, _blockValue.Block.Stacknumber));
                   vehicle.bag.AddItem(stack);
+
+                  vehicle.SetBagModified();
+                  vehicle.bag.onBackpackChanged();
                 }
               }
             }
