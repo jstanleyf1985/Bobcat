@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InControl;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -330,6 +331,7 @@ namespace Bobcat
       public static float ConcreteDamageMultiplier { get; private set; }
       public static float MetalDamageMultiplier { get; private set; }
       public static float PlantDamageMultiplier { get; private set; }
+      public static float OtherDamageMultiplier { get; private set; }
 
       public static float WoodHarvestMultiplier { get; private set; }
       public static float GlassHarvestMultiplier { get; private set; }
@@ -340,6 +342,7 @@ namespace Bobcat
       public static float ConcreteHarvestMultiplier { get; private set; }
       public static float MetalHarvestMultiplier { get; private set; }
       public static float PlantHarvestMultiplier { get; private set; }
+      public static float OtherHarvestMultiplier { get; private set; }
 
       public static float ZombieDamageMultiplier { get; private set; }
       public static float FeralZombieDamageMultiplier { get; private set; }
@@ -358,10 +361,30 @@ namespace Bobcat
       public static string Filling { get; private set; }
       public static string Smoothing {  get; private set; }
 
+      public static int SmallBucketHeight { get; private set; }
+      public static int SmallBucketWidth { get; private set; }
+      public static int SmallBucketDepth { get; private set; }
+      public static int LargeBucketHeight { get; private set; }
+      public static int LargeBucketWidth { get; private set; }
+      public static int LargeBucketDepth { get; private set; }
+      public static int DrillHeight { get; private set; }
+      public static int DrillWidth { get; private set; }
+      public static int DrillDepth { get; private set; }
+
       public static List<string> HarvestableBlockList { get; private set; }
       public static List<string> FillModeValidTerrainItems { get; private set; }
       public static List<string> EntityNamesToIgnoreList { get; private set; }
       public static List<string> BlockNamesToIgnoreList { get; private set; }
+      public static List<string> WoodHarvestMaterialIds { get; private set; }
+      public static List<string> GlassHarvestMaterialIds { get; private set; }
+      public static List<string> ClothHarvestMaterialIds { get; private set; }
+      public static List<string> FleshHarvestMaterialIds { get; private set; }
+      public static List<string> StoneHarvestMaterialIds { get; private set; }
+      public static List<string> ConcreteHarvestMaterialIds { get; private set; }
+      public static List<string> MetalHarvestMaterialIds { get; private set; }
+      public static List<string> PlantHarvestMaterialIds { get; private set; }
+      public static List<string> DirtHarvestMaterialIds { get; private set; }
+      public static List<string> OtherHarvestMaterialIds { get; private set; }
       public static void Load(string path)
       {
         var doc = XDocument.Load(path);
@@ -408,6 +431,18 @@ namespace Bobcat
         TerrainBlocksToSmooth = int.Parse(settings["TerrainBlocksToSmooth"].Trim());
         TimeToWait = float.Parse(settings["TimeToWait"].Trim());
 
+        SmallBucketHeight = int.Parse(settings["SmallBucketHeight"].Trim());
+        SmallBucketWidth = int.Parse(settings["SmallBucketWidth"].Trim());
+        SmallBucketDepth = int.Parse(settings["SmallBucketDepth"].Trim());
+
+        LargeBucketHeight = int.Parse(settings["LargeBucketHeight"].Trim());
+        LargeBucketWidth = int.Parse(settings["LargeBucketWidth"].Trim());
+        LargeBucketDepth = int.Parse(settings["LargeBucketDepth"].Trim());
+
+        DrillHeight = int.Parse(settings["DrillHeight"].Trim());
+        DrillWidth = int.Parse(settings["DrillWidth"].Trim());
+        DrillDepth = int.Parse(settings["DrillDepth"].Trim());
+
         WoodDamageMultiplier = float.Parse(settings["WoodDamageMultiplier"].Trim());
         GlassDamageMultiplier = float.Parse(settings["GlassDamageMultiplier"].Trim());
         ClothDamageMultiplier = float.Parse(settings["ClothDamageMultiplier"].Trim());
@@ -417,6 +452,7 @@ namespace Bobcat
         ConcreteDamageMultiplier = float.Parse(settings["ConcreteDamageMultiplier"].Trim());
         MetalDamageMultiplier = float.Parse(settings["MetalDamageMultiplier"].Trim());
         PlantDamageMultiplier = float.Parse(settings["PlantDamageMultiplier"].Trim());
+        OtherDamageMultiplier = float.Parse(settings["OtherDamageMultiplier"].Trim());
 
         WoodHarvestMultiplier = float.Parse(settings["WoodHarvestMultiplier"].Trim());
         GlassHarvestMultiplier = float.Parse(settings["GlassHarvestMultiplier"].Trim());
@@ -427,6 +463,7 @@ namespace Bobcat
         ConcreteHarvestMultiplier = float.Parse(settings["ConcreteHarvestMultiplier"].Trim());
         MetalHarvestMultiplier = float.Parse(settings["MetalHarvestMultiplier"].Trim());
         PlantHarvestMultiplier = float.Parse(settings["PlantHarvestMultiplier"].Trim());
+        OtherHarvestMultiplier = float.Parse(settings["OtherHarvestMultiplier"].Trim());
 
         // Translation Settings
         Inactive = settings["Inactive"].Trim();
@@ -461,6 +498,56 @@ namespace Bobcat
           .ToList();
 
         BlockNamesToIgnoreList = settings["BlockNamesToIgnore"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        WoodHarvestMaterialIds = settings["WoodHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        GlassHarvestMaterialIds = settings["GlassHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        ClothHarvestMaterialIds = settings["ClothHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        FleshHarvestMaterialIds = settings["FleshHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        StoneHarvestMaterialIds = settings["StoneHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        ConcreteHarvestMaterialIds = settings["ConcreteHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        MetalHarvestMaterialIds = settings["MetalHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        PlantHarvestMaterialIds = settings["PlantHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        DirtHarvestMaterialIds = settings["DirtHarvestMaterialIds"]
+          .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(str => str.Trim())
+          .ToList();
+
+        OtherHarvestMaterialIds = settings["OtherHarvestMaterialIds"]
           .Split(new[] { ',', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
           .Select(str => str.Trim())
           .ToList();

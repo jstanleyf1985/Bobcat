@@ -8,9 +8,12 @@ namespace Bobcat
   {
     public static int[] GetHWDFromMods(List<string> mods)
     {
-      if (mods.Contains("modVehicleBucket5")) return new int[3] { 2, 5, 3 };
-      if (mods.Contains("modVehicleBucket3")) return new int[3] { 2, 3, 3 };
-      if (mods.Contains("modVehicleDrill")) return new int[3] { 3, 3, 4 };
+      int[] smallBucketHWD = new int[3] { BobcatConfig.SmallBucketHeight, BobcatConfig.SmallBucketWidth, BobcatConfig.SmallBucketDepth };
+      int[] largeBucketHWD = new int[3] { BobcatConfig.LargeBucketHeight, BobcatConfig.LargeBucketWidth, BobcatConfig.LargeBucketDepth };
+      int[] drillHWD = new int[3] { BobcatConfig.DrillHeight, BobcatConfig.DrillWidth, BobcatConfig.DrillDepth };
+      if (mods.Contains("modVehicleBucket5")) return largeBucketHWD;
+      if (mods.Contains("modVehicleBucket3")) return smallBucketHWD;
+      if (mods.Contains("modVehicleDrill")) return drillHWD;
 
       return new int[3] { 1, 2, 2 };
     }

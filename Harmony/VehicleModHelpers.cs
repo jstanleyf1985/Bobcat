@@ -48,27 +48,16 @@ namespace Bobcat
 
       if (string.IsNullOrEmpty(blockMaterial)) return BobcatConfig.TerrainDamage;
 
-      string[] wood = new string[3] { "Mwood", "Mdrywall", "MwoodOld" };
-      string[] concrete = new string[3] { "Mconcrete", "MconcretePolished", "Mtiles" };
-      string[] metal = new string[6] { "Mmetal", "Msteel", "Mframe", "MscrapMetal", "Mpanel", "MmetalOld" };
-      string[] cloth = new string[5] { "Mcloth", "Mcarpet", "Mpaper", "Mplastic", "MclothOld" };
-      string[] glass = new string[1] { "Mglass" };
-      string[] stone = new string[1] { "Mstone" };
-      string[] ground = new string[8] { "Mground", "Msand", "Mgravel", "Msnow", "Mliquid", "Mlava", "Msoil", "Mbone" };
-      string[] plant = new string[2] { "Mplant", "Mhay" };
-      string[] flesh = new string[3] { "Morganic", "Mleaves", "Mtrash" };
-      string[] other = new string[4] { "Muntagged", "Mtar", "Mpaver", "Mpaint" };
-
-
-      if (wood.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.WoodDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (concrete.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.ConcreteDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (metal.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.MetalDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (cloth.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.ClothDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (glass.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.GlassDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (stone.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.StoneDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (ground.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.DirtDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (plant.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.PlantDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
-      if (flesh.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.FleshDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.WoodHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.WoodDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.ConcreteHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.ConcreteDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.MetalHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.MetalDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.ClothHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.ClothDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.GlassHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.GlassDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.StoneHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.StoneDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.DirtHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.DirtDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.PlantHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.PlantDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.FleshHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.FleshDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
+      if (BobcatConfig.OtherHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((BobcatConfig.TerrainDamage * BobcatConfig.OtherDamageMultiplier) * progressionToMultiplier[perkDamageBonus]);
 
       return BobcatConfig.TerrainDamage;
     }
@@ -81,26 +70,16 @@ namespace Bobcat
 
       if (string.IsNullOrEmpty(blockMaterial)) return baseAmount;
 
-      string[] wood = new string[3] { "Mwood", "Mdrywall", "MwoodOld" };
-      string[] concrete = new string[3] { "Mconcrete", "MconcretePolished", "Mtiles" };
-      string[] metal = new string[6] { "Mmetal", "Msteel", "Mframe", "MscrapMetal", "Mpanel", "MmetalOld" };
-      string[] cloth = new string[5] { "Mcloth", "Mcarpet", "Mpaper", "Mplastic", "MclothOld" };
-      string[] glass = new string[1] { "Mglass" };
-      string[] stone = new string[1] { "Mstone" };
-      string[] ground = new string[8] { "Mground", "Msand", "Mgravel", "Msnow", "Mliquid", "Mlava", "Msoil", "Mbone" };
-      string[] plant = new string[2] { "Mplant", "Mhay" };
-      string[] flesh = new string[3] { "Morganic", "Mleaves", "Mtrash" };
-      string[] other = new string[4] { "Muntagged", "Mtar", "Mpaver", "Mpaint" };
-
-      if (wood.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.WoodHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (concrete.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.ConcreteHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (metal.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.MetalHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (cloth.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.ClothHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (glass.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.GlassHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (stone.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.StoneHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (ground.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.DirtHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (plant.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.PlantHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
-      if (flesh.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.FleshHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.WoodHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.WoodHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.ConcreteHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.ConcreteHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.MetalHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.MetalHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.ClothHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.ClothHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.GlassHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.GlassHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.StoneHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.StoneHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.DirtHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.DirtHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.PlantHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.PlantHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.FleshHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.FleshHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
+      if (BobcatConfig.OtherHarvestMaterialIds.Contains(blockMaterial)) return Mathf.RoundToInt((baseAmount * BobcatConfig.OtherHarvestMultiplier) * progressionToMultiplier[perkHarvestBonus]);
 
       return baseAmount;
     }
